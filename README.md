@@ -36,6 +36,14 @@ authorize:
 - session: 账号识别码，每次重新授权登录都会更新
 
 ## 授权登录
+
+### response message
+
+- `200` OK: 正常返回
+- `400` invalid: token无法解析，过期，session已更改时的返回
+- `404` not found: app id 无法找到时的返回
+- `500` server: 服务器内部错误的返回
+
 ### 授权登录流程
 
 - User: 在应用使用资源的用户
