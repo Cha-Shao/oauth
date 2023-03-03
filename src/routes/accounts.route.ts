@@ -17,7 +17,7 @@ class AuthRoute implements Routes {
     // 注册
     this.router.post(`${this.path}register`, validationMiddleware(RegisterAccountDto, 'body'), this.accountsController.register);
     // 验证邮箱
-    this.router.get(`${this.path}confirm`, this.accountsController.confirm);
+    this.router.post(`${this.path}confirm`, this.accountsController.confirm);
     // 登录
     this.router.post(`${this.path}login`, validationMiddleware(LoginAccountDto, 'body'), this.accountsController.login);
     // 获取信息

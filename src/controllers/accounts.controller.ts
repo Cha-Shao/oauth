@@ -25,13 +25,14 @@ class AuthController {
 
   public confirm = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const requestToken: string = req.query.token.toString();
+      const requestToken: string = req.body.token;
 
-      const token: string = await this.accountService.confirm(requestToken);
+      const { username, token } = await this.accountService.confirm(requestToken);
 
       res.status(200).json({
         message: 'OK',
-        token: token,
+        token,
+        username,
       });
     } catch (error) {
       next(error);

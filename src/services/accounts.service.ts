@@ -63,7 +63,7 @@ class AccountService {
         session: session,
       },
       undefined,
-      5 * 60,
+      15 * 60,
     );
 
     // 发邮箱
@@ -83,7 +83,10 @@ class AccountService {
     return createAccount;
   }
 
-  public async confirm(requestToken: string): Promise<string> {
+  public async confirm(requestToken: string): Promise<{
+    username: string;
+    token: string;
+  }> {
     if (isEmpty(requestToken)) throw new HttpException(400, 'empty');
 
     // 解析token
@@ -107,9 +110,9 @@ class AccountService {
     if (!updateStatus) throw new HttpException(500, 'server');
 
     // 更新识别码
-    const token = this.refresh(requestToken);
+    const token = await this.refresh(requestToken);
 
-    return token;
+    return { username: findAccount.username, token };
   }
 
   public async login(accountData: LoginAccountDto): Promise<string> {
@@ -178,8 +181,8 @@ class AccountService {
 
     // 解析token
     const parsedToken: TokenPayload = this.token.parse(requestToken);
-    // token是源登录类型
-    if (parsedToken.type !== 'origin') throw new HttpException(400, 'invalid');
+    // token是源登录或首次验证类型
+    if (parsedToken.type !== 'origin' && parsedToken.type !== 'confirm') throw new HttpException(400, 'invalid');
 
     // 识别码是否有用
     const findAccount = await this.accounts.findOne({
