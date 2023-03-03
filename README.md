@@ -8,10 +8,11 @@
 
 | 项           | 描述                 |
 | :----------- | :------------------- |
-| app_id       | id                   |
+| id           | app id               |
 | secret       | 秘钥                 |
 | name         | 名称                 |
 | redirect_uri | 确认授权后跳转的地址 |
+| link         | 官网首页地址         |
 | logo         | logo                 |
 | protocol     | 用户协议地址         |
 | privacy      | 隐私政策地址         |
@@ -34,8 +35,13 @@ authorize:
 - app_id: 授权登录应用的id
 - session: 账号识别码，每次重新授权登录都会更新
 
-
 ## 授权登录
+### 授权登录流程
+
+- User: 在应用使用资源的用户
+- Client: 接入SSO的应用
+- Oauth: MMixel SSO 后端
+- Resource: MMixel SSO 存储信息的数据库
 
 | User                                           |      | Client                                              |      | Oauth                                          |      | Resource |
 | :--------------------------------------------- | :--- | :-------------------------------------------------- | :--- | :--------------------------------------------- | :--- | :------- |
@@ -45,29 +51,29 @@ authorize:
 |                                                | <<   |                                                     |      | 对于`app_id`的授权表单                         |      |          |
 | 确认授权 `POST` /auth/request `token` `app_id` |      |                                                     | >>   |                                                |      |          |
 |                                                |      |                                                     | <<   | token有效，跳转源站/auth?token=`request_token` |      |          |
-|                                                |      | `POST` /auth/token`request_token` `app_id` `secret` | >>   |                                                |      |          |
+|                                                |      | `POST` /auth/apply`request_token` `app_id` `secret` | >>   |                                                |      |          |
 |                                                |      |                                                     | <<   | 授权登录token `token`                          |      |          |
 |                                                |      | 保存登录token                                       |      |                                                |      |          |
 
-## 流
+### 流
 
 App accesses user resources through token
 
-| User |      | Client                 |      | Oauth          |      | Resource |
-| :--- | :--- | :--------------------- | :--- | :------------- | :--- | :------- |
-|      |      | 通过token 访问用户信息 | >>   |                |      |          |
-|      |      |                        |      | 有效，获得资源 | >>   |          |
-|      |      |                        |      |                | <<   | 资源     |
-|      |      |                        | <<   | 资源           |      |          |
+| User |      | Client                                |      | Oauth          |      | Resource |
+| :--- | :--- | :------------------------------------ | :--- | :------------- | :--- | :------- |
+|      |      | 访问用户信息 /auth/info?token=`token` | >>   |                |      |          |
+|      |      |                                       |      | 有效，获得资源 | >>   |          |
+|      |      |                                       |      |                | <<   | 资源     |
+|      |      |                                       | <<   | 资源           |      |          |
 
-## 刷新token
+### 刷新token
 
 | User |      | Client                                         |      | Oauth     |      | Resource |
 | :--- | :--- | :--------------------------------------------- | :--- | :-------- | :--- | :------- |
 |      |      | `POST` /auth/refresh `token` `app_id` `secret` | >>   |           |      |          |
 |      |      |                                                | <<   | 新的token |      |          |
 
-## Token payload
+### Token payload
 
 token存储的信息
 

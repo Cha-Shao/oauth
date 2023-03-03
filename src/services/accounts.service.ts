@@ -245,12 +245,13 @@ class AccountService {
     const accountData: Account = await this.accounts.findOne({
       session: parsedToken.session,
     });
-    if (!accountData) throw new HttpException(404, 'not found');
+    if (!accountData) throw new HttpException(400, 'invalid');
 
     // 生成新token
     const token = this.token.generate(
       {
         type: 'request',
+        app_id: requestForm.app_id,
         session: accountData.session,
       },
       undefined,
@@ -267,13 +268,14 @@ class AccountService {
     const parsedToken: TokenPayload = this.token.parse(requestForm.token);
     // token是请求授权类型
     if (parsedToken.type !== 'request') throw new HttpException(400, 'invalid');
+    if (parsedToken.app_id !== requestForm.app_id) throw new HttpException(400, 'invalid');
 
     // 获取app数据
     const appData = await this.apps.findOne({
       id: requestForm.app_id,
-      secret: requestForm.secret,
     });
-    if (!appData) throw new HttpException(400, 'invalid');
+    // app id 必能找到
+    if (appData.secret !== requestForm.secret) throw new HttpException(400, 'invalid');
 
     const accountData: Account = await this.accounts.findOne({
       session: parsedToken.session,
@@ -341,11 +343,12 @@ class AccountService {
         },
       },
       {
+        _id: 0,
         username: 1,
         email: 1,
       },
     );
-    if (!accountData) throw new HttpException(404, 'not found');
+    if (!accountData) throw new HttpException(400, 'invalid');
 
     return accountData;
   }
