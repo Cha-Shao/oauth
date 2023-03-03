@@ -209,7 +209,7 @@ class AccountService {
     return token;
   }
 
-  public async authInfo(appId: string): Promise<App> {
+  public async authApp(appId: string): Promise<App> {
     if (isEmpty(appId)) throw new HttpException(400, 'empty');
 
     // 寻找app信息
@@ -322,6 +322,32 @@ class AccountService {
 
       return token;
     }
+  }
+
+  public async authInfo(requestToken: string): Promise<Account> {
+    if (isEmpty(requestToken)) throw new HttpException(400, 'empty');
+
+    // 解析token
+    const parsedToken = this.token.parse(requestToken);
+    // token是否授权登录类型
+    if (parsedToken.type !== 'authorize') throw new HttpException(400, 'invalid');
+
+    const accountData = await this.accounts.findOne(
+      {
+        authorize: {
+          $elemMatch: {
+            session: parsedToken.session,
+          },
+        },
+      },
+      {
+        username: 1,
+        email: 1,
+      },
+    );
+    if (!accountData) throw new HttpException(404, 'not found');
+
+    return accountData;
   }
 
   public async authRefresh(requestToken: string): Promise<string> {

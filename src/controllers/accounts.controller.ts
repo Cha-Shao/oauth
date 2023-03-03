@@ -84,11 +84,11 @@ class AuthController {
     }
   };
 
-  public authInfo = async (req: Request, res: Response, next: NextFunction) => {
+  public authApp = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const appId: string = req.query.app_id.toString();
 
-      const appData: App = await this.accountService.authInfo(appId);
+      const appData: App = await this.accountService.authApp(appId);
 
       res.status(200).json({
         message: 'OK',
@@ -114,7 +114,7 @@ class AuthController {
       // });
 
       // 跳转
-      res.redirect(`${redirect_uri}${token}`);
+      res.redirect(redirect_uri + token);
     } catch (error) {
       next(error);
     }
@@ -129,6 +129,21 @@ class AuthController {
       res.status(200).json({
         message: 'OK',
         token,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  public authInfo = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const requestToken: string = req.query.token.toString();
+
+      const accountData: Account = await this.accountService.authInfo(requestToken);
+
+      res.status(200).json({
+        message: 'OK',
+        ...accountData._doc,
       });
     } catch (error) {
       next(error);
