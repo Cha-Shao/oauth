@@ -8,7 +8,7 @@ import morgan from 'morgan';
 import { connect, set } from 'mongoose';
 import swaggerJSDoc from 'swagger-jsdoc';
 import swaggerUi from 'swagger-ui-express';
-import { NODE_ENV, PORT, LOG_FORMAT, ORIGIN, CREDENTIALS } from '@config';
+import { NODE_ENV, PORT, LOG_FORMAT, ORIGIN, CREDENTIALS, HOST } from '@config';
 import { dbConnection } from '@databases';
 import { Routes } from '@interfaces/routes.interface';
 import errorMiddleware from '@middlewares/error.middleware';
@@ -17,12 +17,14 @@ import { logger, stream } from '@utils/logger';
 class App {
   public app: express.Application;
   public env: string;
-  public port: string | number;
+  public port: number;
+  public host: string;
 
   constructor(routes: Routes[]) {
     this.app = express();
     this.env = NODE_ENV || 'development';
-    this.port = PORT || 3000;
+    this.port = Number(PORT) || 3000;
+    this.host = HOST || '0.0.0.0';
 
     this.connectToDatabase();
     this.initializeMiddlewares();
@@ -32,7 +34,7 @@ class App {
   }
 
   public listen() {
-    this.app.listen(this.port, () => {
+    this.app.listen(this.port, '0.0.0.0', () => {
       logger.info(`=================================`);
       logger.info(`======= ENV: ${this.env} =======`);
       logger.info(`🚀 App listening on the port ${this.port}`);
