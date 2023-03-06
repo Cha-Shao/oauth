@@ -1,13 +1,17 @@
-import { SECRET_KEY } from '@/config';
+// import { SECRET_KEY } from '@/config';
 import { TokenPayload } from '@/interfaces/token.interface';
+import { readFileSync } from 'fs';
 import { sign, verify } from 'jsonwebtoken';
+import { join } from 'path';
 
 class UseToken {
-  secretKey: string;
+  // secretKey: string;
   expiresIn: number;
+  secretKey: string;
 
   constructor() {
-    this.secretKey = SECRET_KEY;
+    // this.secretKey = SECRET_KEY;
+    this.secretKey = readFileSync(join(__dirname, '../assets/rsa.pem')).toString();
     this.expiresIn = 60 * 60 * 24 * 7;
   }
 
@@ -19,13 +23,8 @@ class UseToken {
     let result: TokenPayload;
 
     verify(token, secretKey, (err, decoded): void => {
-      if (err) {
-        if (err.name === 'TokenExpiredError') result = { type: 'error' };
-        else if (err.name === 'JsonWebTokenError') result = { type: 'error' };
-        else result = { type: 'error' };
-      } else {
-        result = decoded as TokenPayload;
-      }
+      if (err) result = { type: 'error' };
+      else result = decoded as TokenPayload;
     });
 
     return result;
