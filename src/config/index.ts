@@ -1,4 +1,6 @@
 import { config } from 'dotenv';
+import { readFileSync } from 'fs';
+import { join } from 'path';
 config({ path: `.env.${process.env.NODE_ENV || 'development'}.local` });
 
 export const CREDENTIALS = process.env.CREDENTIALS === 'true';
@@ -27,3 +29,6 @@ export const {
   MAIL_PWD,
   MAIL_NAME,
 } = process.env;
+
+export const PRIVATE_KEY = readFileSync(join(__dirname, '../../private_key.key'), 'utf-8');
+export const PUBLIC_KEY = readFileSync(join(__dirname, '../../public_key.key'), 'utf-8');

@@ -274,7 +274,7 @@ class AccountService {
     const appData = await this.apps.findOne({
       id: requestForm.app_id,
     });
-    // app id 必能找到
+    // app id 必能找到，所以不用(!appData)
     if (appData.secret !== requestForm.secret) throw new HttpException(400, 'invalid');
 
     const accountData: Account = await this.accounts.findOne({
