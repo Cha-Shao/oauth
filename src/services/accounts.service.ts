@@ -233,11 +233,12 @@ class AccountService {
     // 解析token
     const parsedToken: TokenPayload = this.token.parse(requestForm.token);
     // token是源登录类型
+    return parsedToken;
     if (parsedToken.type !== 'origin') throw new HttpException(400, 'invalid');
 
     // 寻找app信息
     const appData: App = await this.apps.findOne({
-      id: requestForm.app_id,
+      id: requestForm.id,
     });
     if (!appData) throw new HttpException(404, 'not found');
 
@@ -251,7 +252,7 @@ class AccountService {
     const token = this.token.generate(
       {
         type: 'request',
-        app_id: requestForm.app_id,
+        app_id: requestForm.id,
         session: accountData.session,
       },
       undefined,
@@ -268,11 +269,11 @@ class AccountService {
     const parsedToken: TokenPayload = this.token.parse(requestForm.token);
     // token是请求授权类型
     if (parsedToken.type !== 'request') throw new HttpException(400, 'invalid');
-    if (parsedToken.app_id !== requestForm.app_id) throw new HttpException(400, 'invalid');
+    if (parsedToken.app_id !== requestForm.id) throw new HttpException(400, 'invalid');
 
     // 获取app数据
     const appData = await this.apps.findOne({
-      id: requestForm.app_id,
+      id: requestForm.id,
     });
     // app id 必能找到，所以不用(!appData)
     if (appData.secret !== requestForm.secret) throw new HttpException(400, 'invalid');

@@ -86,7 +86,7 @@ class AuthController {
 
   public authApp = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const appId: string = req.query.app_id.toString();
+      const appId: string = (req.query.id ?? '').toString();
 
       const appData: App = await this.accountService.authApp(appId);
 
@@ -114,7 +114,8 @@ class AuthController {
       // });
 
       // 跳转
-      res.redirect(redirect_uri + token);
+      res.send(token);
+      // res.redirect(redirect_uri + token);
     } catch (error) {
       next(error);
     }

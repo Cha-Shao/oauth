@@ -1,10 +1,10 @@
 export class AuthRequestDto {
   public token: string;
-  public app_id: string;
+  public id: string;
 }
 
 export class AuthApplyDto {
   public token: string;
-  public app_id: string;
+  public id: string;
   public secret: string;
 }
