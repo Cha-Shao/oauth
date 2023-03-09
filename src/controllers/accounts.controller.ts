@@ -114,8 +114,7 @@ class AuthController {
       // });
 
       // 跳转
-      res.send(token);
-      // res.redirect(redirect_uri + token);
+      res.redirect(redirect_uri + token);
     } catch (error) {
       next(error);
     }
