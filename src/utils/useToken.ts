@@ -1,34 +1,32 @@
-// import { SECRET_KEY } from '@/config';
-import { PRIVATE_KEY, PUBLIC_KEY } from '@/config';
+import { SECRET_KEY } from '@/config';
 import { TokenPayload } from '@/interfaces/token.interface';
-import { sign, verify } from 'jsonwebtoken';
+import { sign, verify, VerifyErrors } from 'jsonwebtoken';
 
 class UseToken {
+  secretKey: string;
   expiresIn: number;
-  privateKey: string;
-  publicKey: string;
 
   constructor() {
-    // this.secretKey = SECRET_KEY;
-    this.privateKey = PRIVATE_KEY;
-    this.publicKey = PUBLIC_KEY;
+    this.secretKey = SECRET_KEY;
     this.expiresIn = 60 * 60 * 24 * 7;
   }
 
-  generate(payload: TokenPayload, secretKey: string = this.privateKey, expiresIn: number = this.expiresIn): string {
+  generate(payload: TokenPayload, secretKey: string = this.secretKey, expiresIn: number = this.expiresIn): string {
     return sign(payload, secretKey, {
       expiresIn,
       issuer: 'mmixel',
-      algorithm: 'RS512',
     });
   }
 
-  parse(token: string, secretKey: string = this.publicKey): TokenPayload {
+  parse(token: string, secretKey: string = this.secretKey): TokenPayload {
     let result: TokenPayload;
 
-    verify(token, secretKey, { algorithms: 'RS512' }, (err, decoded): void => {
-      if (err) result = { type: 'error' };
-      else result = decoded as TokenPayload;
+    verify(token, secretKey, (err: VerifyErrors, decoded: TokenPayload): void => {
+      if (err) {
+        console.log(err);
+
+        result = { type: 'error' };
+      } else result = decoded;
     });
 
     return result;

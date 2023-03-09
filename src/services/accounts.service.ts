@@ -1,5 +1,5 @@
 import { LoginAccountDto, RegisterAccountDto } from '@/dtos/accounts.dto';
-import { AuthApplyDto, AuthRequestDto } from '@/dtos/auth.dto';
+import { AuthApplyDto } from '@/dtos/auth.dto';
 import { HttpException } from '@/exceptions/HttpException';
 import { Account } from '@/interfaces/accounts.interface';
 import { App } from '@/interfaces/apps.interface';
@@ -224,21 +224,23 @@ class AccountService {
     return appData;
   }
 
-  public async authRequest(requestForm: AuthRequestDto): Promise<{
+  public async authRequest(
+    requestToken: string,
+    appId: string,
+  ): Promise<{
     redirect_uri: string;
     token: string;
   }> {
-    if (isEmpty(requestForm)) throw new HttpException(400, 'empty');
+    if (isEmpty(requestToken) || isEmpty(appId)) throw new HttpException(400, 'empty');
 
     // 解析token
-    const parsedToken: TokenPayload = this.token.parse(requestForm.token);
+    const parsedToken: TokenPayload = this.token.parse(requestToken);
     // token是源登录类型
-    return parsedToken;
     if (parsedToken.type !== 'origin') throw new HttpException(400, 'invalid');
 
     // 寻找app信息
     const appData: App = await this.apps.findOne({
-      id: requestForm.id,
+      id: appId,
     });
     if (!appData) throw new HttpException(404, 'not found');
 
@@ -252,7 +254,7 @@ class AccountService {
     const token = this.token.generate(
       {
         type: 'request',
-        app_id: requestForm.id,
+        app_id: appId,
         session: accountData.session,
       },
       undefined,
@@ -305,11 +307,14 @@ class AccountService {
       if (!applyAuth) throw new HttpException(400, 'invalid');
 
       // 生成token
-      const token = this.token.generate({
-        type: 'authorize',
-        app_id: appData.id,
-        session: session,
-      });
+      const token = this.token.generate(
+        {
+          type: 'authorize',
+          app_id: appData.id,
+          session: session,
+        },
+        requestForm.secret,
+      );
 
       return token;
     } else {
@@ -321,7 +326,7 @@ class AccountService {
         session: session,
       });
       // 刷新token
-      const token = this.authRefresh(requestToken);
+      const token = this.authRefresh(requestToken, requestForm.token);
 
       return token;
     }
@@ -354,11 +359,11 @@ class AccountService {
     return accountData;
   }
 
-  public async authRefresh(requestToken: string): Promise<string> {
+  public async authRefresh(requestToken: string, secretKey: string): Promise<string> {
     if (isEmpty(requestToken)) throw new HttpException(400, 'empty');
 
     // 解析token
-    const parsedToken: TokenPayload = this.token.parse(requestToken);
+    const parsedToken: TokenPayload = this.token.parse(requestToken, secretKey);
     // token是否是授权登录类型
     if (parsedToken.type !== 'authorize') throw new HttpException(400, 'invalid');
 
@@ -380,11 +385,14 @@ class AccountService {
     );
     if (!updateSession) throw new HttpException(400, 'invalid');
 
-    const token = this.token.generate({
-      type: 'authorize',
-      app_id: parsedToken.app_id,
-      session: session,
-    });
+    const token = this.token.generate(
+      {
+        type: 'authorize',
+        app_id: parsedToken.app_id,
+        session: session,
+      },
+      secretKey,
+    );
 
     return token;
   }

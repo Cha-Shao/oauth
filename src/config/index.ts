@@ -29,6 +29,3 @@ export const {
   MAIL_PWD,
   MAIL_NAME,
 } = process.env;
-
-export const PRIVATE_KEY = readFileSync(join(__dirname, '../../private_key.key'), 'utf-8');
-export const PUBLIC_KEY = readFileSync(join(__dirname, '../../public_key.key'), 'utf-8');

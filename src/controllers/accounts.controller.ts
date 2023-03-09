@@ -3,7 +3,7 @@ import { LoginAccountDto, RegisterAccountDto } from '@/dtos/accounts.dto';
 import accountService from '@/services/accounts.service';
 import { Account } from '@/interfaces/accounts.interface';
 import { App } from '@/interfaces/apps.interface';
-import { AuthApplyDto, AuthRequestDto } from '@/dtos/auth.dto';
+import { AuthApplyDto } from '@/dtos/auth.dto';
 
 class AuthController {
   private accountService = new accountService();
@@ -101,12 +101,13 @@ class AuthController {
 
   public authRequest = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const requestForm: AuthRequestDto = req.body;
+      const requestToken: string = (req.headers.authorization ?? '').toString();
+      const appId: string = (req.query.id ?? '').toString();
       // const requestToken: string = req.body.token;
       // const appId: string = req.body.app_id;
 
       // const { redirect_uri, token } = await this.accountService.authRequest(requestToken, appId);
-      const { redirect_uri, token } = await this.accountService.authRequest(requestForm);
+      const { redirect_uri, token } = await this.accountService.authRequest(requestToken, appId);
 
       // res.status(200).json({
       //   message: 'OK',
@@ -137,7 +138,8 @@ class AuthController {
 
   public authInfo = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const requestToken: string = req.query.token.toString();
+      // const requestToken: string = req.query.token.toString();
+      const requestToken: string = (req.headers.authorization ?? 'Bearer ').split(' ')[1];
 
       const accountData: Account = await this.accountService.authInfo(requestToken);
 
