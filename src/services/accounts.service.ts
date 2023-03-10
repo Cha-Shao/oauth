@@ -1,5 +1,5 @@
 import { LoginAccountDto, RegisterAccountDto } from '@/dtos/accounts.dto';
-import { AuthApplyDto } from '@/dtos/auth.dto';
+import { AuthApplyDto, AuthInfoDto } from '@/dtos/auth.dto';
 import { HttpException } from '@/exceptions/HttpException';
 import { Account } from '@/interfaces/accounts.interface';
 import { App } from '@/interfaces/apps.interface';
@@ -254,7 +254,7 @@ class AccountService {
     const token = this.token.generate(
       {
         type: 'request',
-        app_id: appId,
+        id: appId,
         session: accountData.session,
       },
       undefined,
@@ -264,30 +264,29 @@ class AccountService {
     return { redirect_uri: appData.redirect_uri, token };
   }
 
-  public async authApply(requestForm: AuthApplyDto): Promise<string> {
+  public async authApply(requestForm: AuthInfoDto): Promise<string> {
     if (isEmpty(requestForm)) throw new HttpException(400, 'empty');
-
     // 解析token
     const parsedToken: TokenPayload = this.token.parse(requestForm.token);
     // token是请求授权类型
     if (parsedToken.type !== 'request') throw new HttpException(400, 'invalid');
-    if (parsedToken.app_id !== requestForm.id) throw new HttpException(400, 'invalid');
 
     // 获取app数据
     const appData = await this.apps.findOne({
-      id: requestForm.id,
+      id: parsedToken.id,
     });
     // app id 必能找到，所以不用(!appData)
     if (appData.secret !== requestForm.secret) throw new HttpException(400, 'invalid');
 
     const accountData: Account = await this.accounts.findOne({
       session: parsedToken.session,
-      authorize: {
-        $elemMatch: { id: appData.id },
+      authorizes: {
+        $elemMatch: { id: parsedToken.id },
       },
     });
+    const session = accountData?._doc.authorizes.find(data => data.id === parsedToken.id).session;
     // 未授权过
-    if (!accountData) {
+    if (!session) {
       // 应用session到数据库
       const session = nanoid();
       const applyAuth: Account = await this.accounts.findOneAndUpdate(
@@ -296,7 +295,7 @@ class AccountService {
         },
         {
           $push: {
-            authorize: {
+            authorizes: {
               id: appData.id,
               session: session,
             },
@@ -310,7 +309,7 @@ class AccountService {
       const token = this.token.generate(
         {
           type: 'authorize',
-          app_id: appData.id,
+          id: appData.id,
           session: session,
         },
         requestForm.secret,
@@ -319,30 +318,40 @@ class AccountService {
       return token;
     } else {
       // 授权过了
-      const session = accountData.authorize.find(data => data.id === appData.id).session;
-      const requestToken = this.token.generate({
-        type: 'authorize',
-        app_id: appData.id,
-        session: session,
-      });
+      const requestToken = this.token.generate(
+        {
+          type: 'authorize',
+          id: parsedToken.id,
+          session: session,
+        },
+        requestForm.secret,
+      );
       // 刷新token
-      const token = this.authRefresh(requestToken, requestForm.token);
+      const token = this.authRefresh({
+        token: requestToken,
+        secret: requestForm.secret,
+      });
 
       return token;
     }
   }
 
-  public async authInfo(requestToken: string): Promise<Account> {
-    if (isEmpty(requestToken)) throw new HttpException(400, 'empty');
+  public async authInfo(requestForm: AuthInfoDto): Promise<Account> {
+    if (isEmpty(requestForm)) throw new HttpException(400, 'empty');
 
     // 解析token
-    const parsedToken = this.token.parse(requestToken);
+    const parsedToken = this.token.parse(requestForm.token, requestForm.secret);
     // token是否授权登录类型
     if (parsedToken.type !== 'authorize') throw new HttpException(400, 'invalid');
 
+    const appData = await this.apps.findOne({
+      id: parsedToken.id,
+    });
+    if (appData.secret !== requestForm.secret) throw new HttpException(400, 'invalid');
+
     const accountData = await this.accounts.findOne(
       {
-        authorize: {
+        authorizes: {
           $elemMatch: {
             session: parsedToken.session,
           },
@@ -359,27 +368,27 @@ class AccountService {
     return accountData;
   }
 
-  public async authRefresh(requestToken: string, secretKey: string): Promise<string> {
-    if (isEmpty(requestToken)) throw new HttpException(400, 'empty');
+  public async authRefresh(requestForm: AuthInfoDto): Promise<string> {
+    if (isEmpty(requestForm)) throw new HttpException(400, 'empty');
 
     // 解析token
-    const parsedToken: TokenPayload = this.token.parse(requestToken, secretKey);
+    const parsedToken: TokenPayload = this.token.parse(requestForm.token, requestForm.secret);
     // token是否是授权登录类型
     if (parsedToken.type !== 'authorize') throw new HttpException(400, 'invalid');
 
     const session = nanoid();
     const updateSession: Account = await this.accounts.findOneAndUpdate(
       {
-        authorize: {
+        authorizes: {
           $elemMatch: {
-            id: parsedToken.app_id,
+            id: parsedToken.id,
             session: parsedToken.session,
           },
         },
       },
       {
         $set: {
-          'authorize.$.session': session,
+          'authorizes.$.session': session,
         },
       },
     );
@@ -388,10 +397,10 @@ class AccountService {
     const token = this.token.generate(
       {
         type: 'authorize',
-        app_id: parsedToken.app_id,
+        id: parsedToken.id,
         session: session,
       },
-      secretKey,
+      requestForm.secret,
     );
 
     return token;

@@ -1,5 +1,6 @@
 import { NextFunction, Request, Response } from 'express';
 import { LoginAccountDto, RegisterAccountDto } from '@/dtos/accounts.dto';
+import { AuthInfoDto } from '@/dtos/auth.dto';
 import accountService from '@/services/accounts.service';
 import { Account } from '@/interfaces/accounts.interface';
 import { App } from '@/interfaces/apps.interface';
@@ -56,7 +57,7 @@ class AuthController {
 
   public info = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const requestToken: string = req.query.token.toString();
+      const requestToken: string = req.headers?.authorization;
 
       const accountData: Account = await this.accountService.info(requestToken);
 
@@ -86,7 +87,7 @@ class AuthController {
 
   public authApp = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const appId: string = (req.query.id ?? '').toString();
+      const appId: string = req.query?.id.toString();
 
       const appData: App = await this.accountService.authApp(appId);
 
@@ -101,12 +102,9 @@ class AuthController {
 
   public authRequest = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const requestToken: string = (req.headers.authorization ?? '').toString();
-      const appId: string = (req.query.id ?? '').toString();
-      // const requestToken: string = req.body.token;
-      // const appId: string = req.body.app_id;
+      const requestToken: string = (req.headers.authorization ?? 'Bearer ').toString().split(' ')[1];
+      const appId: string = req.query?.id.toString();
 
-      // const { redirect_uri, token } = await this.accountService.authRequest(requestToken, appId);
       const { redirect_uri, token } = await this.accountService.authRequest(requestToken, appId);
 
       // res.status(200).json({
@@ -123,7 +121,7 @@ class AuthController {
 
   public authApply = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const requestForm: AuthApplyDto = req.body;
+      const requestForm: AuthInfoDto = req.body;
 
       const token: string = await this.accountService.authApply(requestForm);
 
@@ -138,10 +136,14 @@ class AuthController {
 
   public authInfo = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      // const requestToken: string = req.query.token.toString();
-      const requestToken: string = (req.headers.authorization ?? 'Bearer ').split(' ')[1];
+      const requestToken: string = req.query.token?.toString();
+      const requestSecret: string = req.query.secret?.toString();
+      const requestForm: AuthInfoDto = {
+        token: requestToken,
+        secret: requestSecret,
+      };
 
-      const accountData: Account = await this.accountService.authInfo(requestToken);
+      const accountData: Account = await this.accountService.authInfo(requestForm);
 
       res.status(200).json({
         message: 'OK',
@@ -154,9 +156,14 @@ class AuthController {
 
   public authRefresh = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const requestToken: string = req.body.token;
+      const requestToken: string = req.query?.token.toString();
+      const requestSecret: string = req.query?.secret.toString();
+      const requestForm: AuthInfoDto = {
+        token: requestToken,
+        secret: requestSecret,
+      };
 
-      const token: string = await this.accountService.authRefresh(requestToken);
+      const token: string = await this.accountService.authRefresh(requestForm);
 
       res.status(200).json({
         message: 'OK',

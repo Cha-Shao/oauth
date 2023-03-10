@@ -7,7 +7,7 @@ export interface Account extends DocumentResult<Account> {
   username: string;
   email: string;
   password: string;
-  authorize: {
+  authorizes: {
     id: string;
     session: string;
   }[];

@@ -33,7 +33,7 @@ class AuthRoute implements Routes {
     this.router.post(`${this.path}auth/apply`, this.accountsController.authApply);
     this.router.get(`${this.path}auth/info`, this.accountsController.authInfo);
     // 自动续授权登录token
-    this.router.post(`${this.path}auth/refresh`, this.accountsController.authRefresh);
+    this.router.get(`${this.path}auth/refresh`, this.accountsController.authRefresh);
   }
 }
 
