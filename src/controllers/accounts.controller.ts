@@ -4,7 +4,6 @@ import { AuthInfoDto } from '@/dtos/auth.dto';
 import accountService from '@/services/accounts.service';
 import { Account } from '@/interfaces/accounts.interface';
 import { App } from '@/interfaces/apps.interface';
-import { AuthApplyDto } from '@/dtos/auth.dto';
 
 class AuthController {
   private accountService = new accountService();

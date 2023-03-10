@@ -1,5 +1,5 @@
 import { LoginAccountDto, RegisterAccountDto } from '@/dtos/accounts.dto';
-import { AuthApplyDto, AuthInfoDto } from '@/dtos/auth.dto';
+import { AuthInfoDto } from '@/dtos/auth.dto';
 import { HttpException } from '@/exceptions/HttpException';
 import { Account } from '@/interfaces/accounts.interface';
 import { App } from '@/interfaces/apps.interface';
