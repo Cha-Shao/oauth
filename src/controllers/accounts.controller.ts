@@ -25,7 +25,7 @@ class AuthController {
 
   public confirm = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const requestToken: string = (req.headers?.authorization ?? 'Bearer ').split(' ')[1];
+      const requestToken: string = req.body.token;
 
       const { username, token } = await this.accountService.confirm(requestToken);
 

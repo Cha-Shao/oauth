@@ -157,11 +157,11 @@ class AccountService {
     return token;
   }
 
-  public async info(token: string): Promise<Account> {
-    if (isEmpty(token)) throw new HttpException(400, 'empty');
+  public async info(requestToken: string): Promise<Account> {
+    if (isEmpty(requestToken)) throw new HttpException(400, 'empty');
 
     // 解析token
-    const parsedToken: TokenPayload = this.token.parse(token);
+    const parsedToken: TokenPayload = this.token.parse(requestToken);
     // token是源登录类型
     if (parsedToken.type !== 'origin') throw new HttpException(400, 'invalid');
 
