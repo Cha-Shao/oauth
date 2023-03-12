@@ -25,7 +25,7 @@ class AuthController {
 
   public confirm = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const requestToken: string = req.body.token;
+      const requestToken: string = (req.headers?.authorization ?? 'Bearer ').split(' ')[1];
 
       const { username, token } = await this.accountService.confirm(requestToken);
 
@@ -56,7 +56,7 @@ class AuthController {
 
   public info = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const requestToken: string = req.headers?.authorization;
+      const requestToken: string = (req.headers?.authorization ?? 'Bearer ').split(' ')[1];
 
       const accountData: Account = await this.accountService.info(requestToken);
 
@@ -71,7 +71,7 @@ class AuthController {
 
   public refresh = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const requestToken: string = req.body.token;
+      const requestToken: string = (req.headers?.authorization ?? 'Bearer ').split(' ')[1];
 
       const token: string = await this.accountService.refresh(requestToken);
 
@@ -155,12 +155,7 @@ class AuthController {
 
   public authRefresh = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const requestToken: string = req.query?.token.toString();
-      const requestSecret: string = req.query?.secret.toString();
-      const requestForm: AuthInfoDto = {
-        token: requestToken,
-        secret: requestSecret,
-      };
+      const requestForm: AuthInfoDto = req.body;
 
       const token: string = await this.accountService.authRefresh(requestForm);
 

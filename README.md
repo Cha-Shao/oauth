@@ -51,36 +51,36 @@ authorize:
 - Oauth: MMixel SSO 后端
 - Resource: MMixel SSO 存储信息的数据库
 
-| User                                           |      | Client                                                                |      | Oauth                                          |      | Resource |
-| :--------------------------------------------- | :--- | :-------------------------------------------------------------------- | :--- | :--------------------------------------------- | :--- | :------- |
-|                                                | <<   | 是否授权登录                                                          |      |                                                |      |          |
-| 是                                             | >>   |                                                                       |      |                                                |      |          |
-|                                                |      | `redirect` sso.mmixel.com/auth?id=`app_id`                            | >>   |                                                |      |          |
-|                                                | <<   |                                                                       |      | 对于`app_id`的授权表单                         |      |          |
-| 确认授权 `POST` /auth/request `token` `app_id` |      |                                                                       | >>   |                                                |      |          |
-|                                                |      |                                                                       | <<   | token有效，跳转源站/auth?token=`request_token` |      |          |
-|                                                |      | `POST` api.sso.mmixel.com/auth/apply`request_token` `app_id` `secret` | >>   |                                                |      |          |
-|                                                |      |                                                                       | <<   | 授权登录token `token`                          |      |          |
-|                                                | <<   | 保存登录token                                                         |      |                                                |      |          |
-| 保存登录token                                  |      |                                                                       |      |                                                |      |          |
+| User                                           |      | Client                                                                |      | Oauth                                          |
+| :--------------------------------------------- | :--- | :-------------------------------------------------------------------- | :--- | :--------------------------------------------- |
+|                                                | <<   | 是否授权登录                                                          |      |                                                |
+| 是                                             | >>   |                                                                       |      |                                                |
+|                                                |      | `redirect` sso.mmixel.com/auth?id=`app_id`                            | >>   |                                                |
+|                                                | <<   |                                                                       |      | 对于`app_id`的授权表单                         |
+| 确认授权 `POST` /auth/request `token` `app_id` |      |                                                                       | >>   |                                                |
+|                                                |      |                                                                       | <<   | token有效，跳转源站/auth?token=`request_token` |
+|                                                |      | `POST` api.sso.mmixel.com/auth/apply`request_token` `app_id` `secret` | >>   |                                                |
+|                                                |      |                                                                       | <<   | 授权登录token `token`                          |
+|                                                | <<   | 保存登录token                                                         |      |                                                |
+| 保存登录token                                  |      |                                                                       |      |                                                |
 
 ### 流
 
 App accesses user resources through token
 
-| User |      | Client                                                |      | Oauth          |      | Resource |
-| :--- | :--- | :---------------------------------------------------- | :--- | :------------- | :--- | :------- |
-|      |      | 访问用户信息 /auth/info?token=`token`&secret=`secret` | >>   |                |      |          |
-|      |      |                                                       |      | 有效，获得资源 | >>   |          |
-|      |      |                                                       |      |                | <<   | 资源     |
-|      |      |                                                       | <<   | 资源           |      |          |
+| Client                                                |      | Oauth          |      | Resource |
+| :---------------------------------------------------- | :--- | :------------- | :--- | :------- |
+| 访问用户信息 /auth/info?token=`token`&secret=`secret` | >>   |                |      |          |
+|                                                       |      | 有效，获得资源 | >>   |          |
+|                                                       |      |                | <<   | 资源     |
+|                                                       | <<   | 资源           |      |          |
 
 ### 刷新token
 
-| User |      | Client                                |      | Oauth     |      | Resource |
-| :--- | :--- | :------------------------------------ | :--- | :-------- | :--- | :------- |
-|      |      | `POST` /auth/refresh `token` `secret` | >>   |           |      |          |
-|      |      |                                       | <<   | 新的token |      |          |
+| Client                                |      | Oauth     |
+| :------------------------------------ | :--- | :-------- |
+| `POST` /auth/refresh `token` `secret` | >>   |           |
+|                                       | <<   | 新的token |
 
 ### Token payload
 

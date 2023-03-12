@@ -284,7 +284,7 @@ class AccountService {
         $elemMatch: { id: parsedToken.id },
       },
     });
-    const session = accountData?._doc.authorizes.find(data => data.id === parsedToken.id).session;
+    const session: string = accountData?._doc.authorizes.find(data => data.id === parsedToken.id).session;
     // 未授权过
     if (!session) {
       // 应用session到数据库
