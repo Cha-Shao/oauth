@@ -17,6 +17,8 @@ import { join } from 'path';
 
 const registerHtml = readFileSync(join(__dirname, '../assets/register.html')).toString();
 
+const rejectUsername = ['admin', 'administrator', 'root', 'sso', 'mmixel'];
+
 class AccountService {
   private accounts = accountModel;
   private apps = appModel;
@@ -27,6 +29,7 @@ class AccountService {
     if (isEmpty(accountData)) throw new HttpException(400, 'empty');
 
     // 用户名是否占用
+    if (rejectUsername.includes(accountData.username)) throw new HttpException(409, 'username');
     const findWithUsername: Account = await this.accounts.findOne({
       username: accountData.username,
       valid: true,
