@@ -53,6 +53,7 @@ class AccountService {
       username: accountData.username,
       email: accountData.email,
       password: encryptionPassword,
+      authorizes: [],
       valid: false,
     });
 

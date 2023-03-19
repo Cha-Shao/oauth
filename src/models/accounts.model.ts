@@ -35,7 +35,6 @@ const accountSchema: Schema = new Schema({
       },
     ],
     default: [],
-    required: true,
   },
   valid: {
     type: Boolean,
