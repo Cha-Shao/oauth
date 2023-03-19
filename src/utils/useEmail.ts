@@ -23,9 +23,9 @@ class UseEmail {
   public async send(mailArgs: MailType) {
     await this.transporter.sendMail({
       from: '"MMIXEL 支持团队" <no-reply@elfmc.com>',
-      to: `${mailArgs.to}<${mailArgs.email}>`,
+      to: `${mailArgs.email}`,
       subject: mailArgs.title,
-      text: mailArgs.text,
+      // text: mailArgs.text,
       html: mailArgs.html,
       // headers: { 'x-myheader': 'test header' },
     });

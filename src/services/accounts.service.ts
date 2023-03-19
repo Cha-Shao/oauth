@@ -80,7 +80,7 @@ class AccountService {
       to: accountData.username,
       email: accountData.email,
       title: '验证你的电子邮箱',
-      text: '这是什么，邮箱？发一下。',
+      // text: '这是什么，邮箱？发一下。',
       html: mailContent,
       type: 'Confirm account',
     });
