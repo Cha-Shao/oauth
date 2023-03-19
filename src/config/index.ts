@@ -1,9 +1,8 @@
 import { config } from 'dotenv';
-import { readFileSync } from 'fs';
-import { join } from 'path';
 config({ path: `.env.${process.env.NODE_ENV || 'development'}.local` });
 
 export const CREDENTIALS = process.env.CREDENTIALS === 'true';
+export const ORIGIN = process.env.ORIGIN.split(',');
 export const {
   NODE_ENV,
   // PORT
@@ -20,8 +19,6 @@ export const {
   // LOG
   LOG_FORMAT,
   LOG_DIR,
-  // CORS
-  ORIGIN,
   // MAIL
   MAIL_HOST,
   MAIL_PORT,
