@@ -30,7 +30,7 @@ const accountSchema: Schema = new Schema({
         },
         session: {
           type: String,
-          unique: true,
+          index: true,
         },
       },
     ],

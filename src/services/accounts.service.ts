@@ -133,11 +133,11 @@ class AccountService {
         email: accountData.account,
         valid: true,
       }));
-    if (!findAccount) throw new HttpException(400, 'invalid');
+    if (!findAccount) throw new HttpException(401, 'login');
 
     // 密码是否正确
     const checkPassword: boolean = await compare(accountData.password, findAccount.password);
-    if (!checkPassword) throw new HttpException(400, 'invalid');
+    if (!checkPassword) throw new HttpException(401, 'login');
 
     // 生成识别码并应用
     const session = nanoid();
@@ -168,7 +168,7 @@ class AccountService {
     // 解析token
     const parsedToken: TokenPayload = this.token.parse(requestToken);
     // token是源登录类型
-    if (parsedToken.type !== 'origin') throw new HttpException(400, 'invalid');
+    if (parsedToken.type !== 'origin') throw new HttpException(401, 'login');
 
     const accountData: Account = await this.accounts.findOne(
       {
@@ -176,7 +176,7 @@ class AccountService {
       },
       { _id: 0, session: 0, password: 0 },
     );
-    if (!accountData) throw new HttpException(400, 'invalid');
+    if (!accountData) throw new HttpException(401, 'login');
 
     return accountData;
   }
@@ -187,13 +187,13 @@ class AccountService {
     // 解析token
     const parsedToken: TokenPayload = this.token.parse(requestToken);
     // token是源登录或首次验证类型
-    if (parsedToken.type !== 'origin' && parsedToken.type !== 'confirm') throw new HttpException(400, 'invalid');
+    if (parsedToken.type !== 'origin' && parsedToken.type !== 'confirm') throw new HttpException(401, 'login');
 
     // 识别码是否有用
     const findAccount = await this.accounts.findOne({
       session: parsedToken.session,
     });
-    if (!findAccount) throw new HttpException(400, 'invalid');
+    if (!findAccount) throw new HttpException(401, 'login');
 
     // 新的识别码
     const session = nanoid();
@@ -241,7 +241,7 @@ class AccountService {
     // 解析token
     const parsedToken: TokenPayload = this.token.parse(requestToken);
     // token是源登录类型
-    if (parsedToken.type !== 'origin') throw new HttpException(400, 'invalid');
+    if (parsedToken.type !== 'origin') throw new HttpException(401, 'login');
 
     // 寻找app信息
     const appData: App = await this.apps.findOne({
@@ -253,7 +253,7 @@ class AccountService {
     const accountData: Account = await this.accounts.findOne({
       session: parsedToken.session,
     });
-    if (!accountData) throw new HttpException(400, 'invalid');
+    if (!accountData) throw new HttpException(401, 'login');
 
     // 生成新token
     const token = this.token.generate(
@@ -308,7 +308,7 @@ class AccountService {
         },
         { new: true },
       );
-      if (!applyAuth) throw new HttpException(400, 'invalid');
+      if (!applyAuth) throw new HttpException(401, 'login');
 
       // 生成token
       const token = this.token.generate(
