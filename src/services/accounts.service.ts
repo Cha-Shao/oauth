@@ -97,13 +97,13 @@ class AccountService {
     // 解析token
     const parsedToken: TokenPayload = this.token.parse(requestToken);
     // token是启用账号类型
-    if (parsedToken.type !== 'confirm') throw new HttpException(400, 'invalid');
+    if (parsedToken.type !== 'confirm') throw new HttpException(401, 'invalid');
 
     // 是否已经激活过
     const findAccount = await this.accounts.findOne({
       session: parsedToken.session,
     });
-    if (!findAccount) throw new HttpException(400, 'invalid');
+    if (!findAccount) throw new HttpException(401, 'invalid');
 
     // 启用账户，设置加入时间
     const updateStatus = await this.accounts.updateOne(
@@ -274,14 +274,14 @@ class AccountService {
     // 解析token
     const parsedToken: TokenPayload = this.token.parse(requestForm.token);
     // token是请求授权类型
-    if (parsedToken.type !== 'request') throw new HttpException(400, 'invalid');
+    if (parsedToken.type !== 'request') throw new HttpException(401, 'invalid');
 
     // 获取app数据
     const appData = await this.apps.findOne({
       id: parsedToken.id,
     });
     // app id 必能找到，所以不用(!appData)
-    if (appData.secret !== requestForm.secret) throw new HttpException(400, 'invalid');
+    if (appData.secret !== requestForm.secret) throw new HttpException(401, 'invalid');
 
     const accountData: Account = await this.accounts.findOne({
       session: parsedToken.session,
@@ -347,12 +347,12 @@ class AccountService {
     // 解析token
     const parsedToken = this.token.parse(requestForm.token, requestForm.secret);
     // token是否授权登录类型
-    if (parsedToken.type !== 'authorize') throw new HttpException(400, 'invalid');
+    if (parsedToken.type !== 'authorize') throw new HttpException(401, 'invalid');
 
     const appData = await this.apps.findOne({
       id: parsedToken.id,
     });
-    if (appData.secret !== requestForm.secret) throw new HttpException(400, 'invalid');
+    if (appData.secret !== requestForm.secret) throw new HttpException(401, 'invalid');
 
     const accountData = await this.accounts.findOne(
       {
@@ -368,7 +368,7 @@ class AccountService {
         email: 1,
       },
     );
-    if (!accountData) throw new HttpException(400, 'invalid');
+    if (!accountData) throw new HttpException(401, 'invalid');
 
     return accountData;
   }
@@ -379,7 +379,7 @@ class AccountService {
     // 解析token
     const parsedToken: TokenPayload = this.token.parse(requestForm.token, requestForm.secret);
     // token是否是授权登录类型
-    if (parsedToken.type !== 'authorize') throw new HttpException(400, 'invalid');
+    if (parsedToken.type !== 'authorize') throw new HttpException(401, 'invalid');
 
     const session = nanoid();
     const updateSession: Account = await this.accounts.findOneAndUpdate(
@@ -397,7 +397,7 @@ class AccountService {
         },
       },
     );
-    if (!updateSession) throw new HttpException(400, 'invalid');
+    if (!updateSession) throw new HttpException(401, 'invalid');
 
     const token = this.token.generate(
       {
