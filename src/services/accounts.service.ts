@@ -49,8 +49,9 @@ class AccountService {
     const session = nanoid();
     // 创建用户
     const createAccount: Account = await this.accounts.create({
-      ...accountData,
       session: session,
+      username: accountData.username,
+      email: accountData.email,
       password: encryptionPassword,
       valid: false,
     });

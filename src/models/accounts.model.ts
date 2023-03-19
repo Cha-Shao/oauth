@@ -21,7 +21,7 @@ const accountSchema: Schema = new Schema({
     type: String,
     required: true,
   },
-  authorize: {
+  authorizes: {
     type: [
       {
         id: {
