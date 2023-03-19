@@ -106,13 +106,11 @@ class AuthController {
 
       const { redirect_uri, token } = await this.accountService.authRequest(requestToken, appId);
 
-      // res.status(200).json({
-      //   message: 'OK',
-      //   token: newToken,
-      // });
-
-      // 跳转
-      res.redirect(redirect_uri + token);
+      res.status(200).json({
+        message: 'OK',
+        token,
+        redirect_uri,
+      });
     } catch (error) {
       next(error);
     }
