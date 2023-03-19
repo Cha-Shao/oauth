@@ -34,15 +34,14 @@ const accountSchema: Schema = new Schema({
         },
       },
     ],
+    default: [],
     required: true,
   },
   valid: {
     type: Boolean,
-    required: true,
   },
   jointime: {
     type: Number,
-    require: true,
   },
 });
 
