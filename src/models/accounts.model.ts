@@ -26,12 +26,10 @@ const accountSchema: Schema = new Schema({
       {
         id: {
           type: String,
-          required: true,
           index: true,
         },
         session: {
           type: String,
-          required: true,
           unique: true,
         },
       },
