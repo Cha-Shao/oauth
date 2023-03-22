@@ -29,7 +29,7 @@ class AccountService {
     if (isEmpty(accountData)) throw new HttpException(400, 'empty');
 
     // 用户名是否占用
-    if (!accountData.username.match(/^[a-zA-Z0-9]+$/)) throw new HttpException(400, 'invalid');
+    if (!accountData.username.match(/^[a-zA-Z0-9_-]+$/)) throw new HttpException(400, 'invalid');
     if (rejectUsername.includes(accountData.username)) throw new HttpException(409, 'username');
     const findWithUsername: Account = await this.accounts.findOne({
       username: accountData.username,
