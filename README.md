@@ -68,12 +68,12 @@ authorize:
 
 App accesses user resources through token
 
-| Client                                                |      | Oauth          |      | Resource |
-| :---------------------------------------------------- | :--- | :------------- | :--- | :------- |
-| 访问用户信息 /auth/info?token=`token`&secret=`secret` | >>   |                |      |          |
-|                                                       |      | 有效，获得资源 | >>   |          |
-|                                                       |      |                | <<   | 资源     |
-|                                                       | <<   | 资源           |      |          |
+| Client                                                |      | Oauth                    |      | Resource |
+| :---------------------------------------------------- | :--- | :----------------------- | :--- | :------- |
+| 访问用户信息 /auth/info?token=`token`&secret=`secret` | >>   |                          |      |          |
+|                                                       |      | 有效，获得资源           | >>   |          |
+|                                                       |      |                          | <<   | 资源     |
+|                                                       | <<   | 资源  `username` `email` |      |          |
 
 ### 刷新token
 

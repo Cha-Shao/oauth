@@ -12,11 +12,10 @@ class AuthController {
     try {
       const accountData: RegisterAccountDto = req.body;
 
-      await this.accountService.register(accountData);
-      // const registerAccountData: Account = await this.accountService.register(accountData);
+      const response = await this.accountService.register(accountData, req.ip);
 
       res.status(201).json({
-        message: 'OK',
+        message: response,
       });
     } catch (error) {
       next(error);
@@ -27,7 +26,7 @@ class AuthController {
     try {
       const requestToken: string = req.body.token;
 
-      const { username, token } = await this.accountService.confirm(requestToken);
+      const { username, token } = await this.accountService.confirm(requestToken, req.ip);
 
       res.status(200).json({
         message: 'OK',
@@ -43,7 +42,7 @@ class AuthController {
     try {
       const accountData: LoginAccountDto = req.body;
 
-      const token: string = await this.accountService.login(accountData);
+      const token: string = await this.accountService.login(accountData, req.ip);
 
       res.status(200).json({
         message: 'OK',
@@ -58,7 +57,7 @@ class AuthController {
     try {
       const requestToken: string = (req.headers?.authorization ?? 'Bearer ').split(' ')[1];
 
-      const accountData: Account = await this.accountService.info(requestToken);
+      const accountData: Account = await this.accountService.info(requestToken, req.ip);
 
       res.status(200).json({
         message: 'OK',
@@ -73,7 +72,7 @@ class AuthController {
     try {
       const requestToken: string = (req.headers?.authorization ?? 'Bearer ').split(' ')[1];
 
-      const token: string = await this.accountService.refresh(requestToken);
+      const token: string = await this.accountService.refresh(requestToken, req.ip);
 
       res.status(200).json({
         message: 'OK',
@@ -88,7 +87,7 @@ class AuthController {
     try {
       const appId: string = req.query?.id.toString();
 
-      const appData: App = await this.accountService.authApp(appId);
+      const appData: App = await this.accountService.authApp(appId, req.ip);
 
       res.status(200).json({
         message: 'OK',
@@ -104,7 +103,7 @@ class AuthController {
       const requestToken: string = (req.headers.authorization ?? 'Bearer ').toString().split(' ')[1];
       const appId: string = req.query?.id.toString();
 
-      const { redirect_uri, token } = await this.accountService.authRequest(requestToken, appId);
+      const { redirect_uri, token } = await this.accountService.authRequest(requestToken, appId, req.ip);
 
       res.status(200).json({
         message: 'OK',

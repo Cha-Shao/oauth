@@ -25,10 +25,11 @@ class AccountService {
   private token = new useToken();
   private email = new UseEmail();
 
-  public async register(accountData: RegisterAccountDto): Promise<Account> {
+  public async register(accountData: RegisterAccountDto, requestIp: string): Promise<string> {
     if (isEmpty(accountData)) throw new HttpException(400, 'empty');
 
     // 用户名是否占用
+    if (!accountData.username.match(/^[a-zA-Z0-9]+$/)) throw new HttpException(400, 'invalid');
     if (rejectUsername.includes(accountData.username)) throw new HttpException(409, 'username');
     const findWithUsername: Account = await this.accounts.findOne({
       username: accountData.username,
@@ -56,10 +57,7 @@ class AccountService {
       authorizes: [],
       valid: false,
     });
-
-    logger.info(`User created:`);
-    logger.info(`- Username: ${accountData.username}`);
-    logger.info(`- Email   : ${accountData.email}`);
+    if (!createAccount) throw new HttpException(500, 'server');
 
     // 生成token
     const token = this.token.generate(
@@ -85,10 +83,18 @@ class AccountService {
       type: 'Confirm account',
     });
 
-    return createAccount;
+    logger.info(`Account has created:`);
+    logger.info(`- Username : ${accountData.username}`);
+    logger.info(`- Email    : ${accountData.email}`);
+    logger.info(`- Ip       : ${requestIp}`);
+
+    return 'OK';
   }
 
-  public async confirm(requestToken: string): Promise<{
+  public async confirm(
+    requestToken: string,
+    requestIp: string,
+  ): Promise<{
     username: string;
     token: string;
   }> {
@@ -115,12 +121,16 @@ class AccountService {
     if (!updateStatus) throw new HttpException(500, 'server');
 
     // 更新识别码
-    const token = await this.refresh(requestToken);
+    const token = await this.refresh(requestToken, `local(origin ${requestIp})`);
+
+    logger.info(`Account confirmed:`);
+    logger.info(`- Username : ${findAccount.username}`);
+    logger.info(`- Ip       : ${requestIp}`);
 
     return { username: findAccount.username, token };
   }
 
-  public async login(accountData: LoginAccountDto): Promise<string> {
+  public async login(accountData: LoginAccountDto, requestIp: string): Promise<string> {
     if (isEmpty(accountData)) throw new HttpException(400, 'empty');
 
     // 通过account（用户名/邮箱）寻找用户
@@ -159,10 +169,14 @@ class AccountService {
       session: session,
     });
 
+    logger.info(`Account has logged in`);
+    logger.info(`- Username : ${findAccount.username}`);
+    logger.info(`- Ip       : ${requestIp}`);
+
     return token;
   }
 
-  public async info(requestToken: string): Promise<Account> {
+  public async info(requestToken: string, requestIp: string): Promise<Account> {
     if (isEmpty(requestToken)) throw new HttpException(400, 'empty');
 
     // 解析token
@@ -178,10 +192,12 @@ class AccountService {
     );
     if (!accountData) throw new HttpException(401, 'login');
 
+    logger.info(`Account info request from ${requestIp}`);
+
     return accountData;
   }
 
-  public async refresh(requestToken: string): Promise<string> {
+  public async refresh(requestToken: string, requestIp: string): Promise<string> {
     if (isEmpty(requestToken)) throw new HttpException(400, 'empty');
 
     // 解析token
@@ -211,10 +227,12 @@ class AccountService {
       session: session,
     });
 
+    logger.info(`Account refresh request from ${requestIp}`);
+
     return token;
   }
 
-  public async authApp(appId: string): Promise<App> {
+  public async authApp(appId: string, requestIp: string): Promise<App> {
     if (isEmpty(appId)) throw new HttpException(400, 'empty');
 
     // 寻找app信息
@@ -226,12 +244,15 @@ class AccountService {
     );
     if (!appData) throw new HttpException(404, 'not found');
 
+    logger.info(`App info request from ${requestIp}`);
+
     return appData;
   }
 
   public async authRequest(
     requestToken: string,
     appId: string,
+    requestIp: string,
   ): Promise<{
     redirect_uri: string;
     token: string;
@@ -265,6 +286,10 @@ class AccountService {
       undefined,
       5 * 60,
     );
+
+    logger.info('Account authorize request token has created:');
+    logger.info(`- Username : ${accountData.username}`);
+    logger.info(`- Ip       : ${requestIp}`);
 
     return { redirect_uri: appData.redirect_uri, token };
   }
@@ -320,6 +345,10 @@ class AccountService {
         requestForm.secret,
       );
 
+      logger.info('Account authorize created:');
+      logger.info(`App id   : ${appData.id}`);
+      logger.info(`Username : ${accountData.username}`);
+
       return token;
     } else {
       // 授权过了
@@ -336,6 +365,10 @@ class AccountService {
         token: requestToken,
         secret: requestForm.secret,
       });
+
+      logger.info('Account authorize refreshed:');
+      logger.info(`App id   : ${appData.id}`);
+      logger.info(`Username : ${accountData.username}`);
 
       return token;
     }
@@ -369,6 +402,8 @@ class AccountService {
       },
     );
     if (!accountData) throw new HttpException(401, 'invalid');
+
+    logger.info(`Account authorize info request from app id: ${appData.id}`);
 
     return accountData;
   }
