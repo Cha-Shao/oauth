@@ -8,7 +8,7 @@ class UseToken {
 
   constructor() {
     this.secretKey = SECRET_KEY;
-    this.expiresIn = 60 * 60 * 24 * 7;
+    this.expiresIn = 60 * 60 * 24 * 28;
   }
 
   generate(payload: TokenPayload, secretKey: string = this.secretKey, expiresIn: number = this.expiresIn): string {

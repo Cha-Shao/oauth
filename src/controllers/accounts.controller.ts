@@ -68,20 +68,20 @@ class AuthController {
     }
   };
 
-  public refresh = async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      const requestToken: string = (req.headers?.authorization ?? 'Bearer ').split(' ')[1];
+  // public refresh = async (req: Request, res: Response, next: NextFunction) => {
+  //   try {
+  //     const requestToken: string = (req.headers?.authorization ?? 'Bearer ').split(' ')[1];
 
-      const token: string = await this.accountService.refresh(requestToken, req.ip);
+  //     const token: string = await this.accountService.refresh(requestToken, req.ip);
 
-      res.status(200).json({
-        message: 'OK',
-        token: token,
-      });
-    } catch (error) {
-      next(error);
-    }
-  };
+  //     res.status(200).json({
+  //       message: 'OK',
+  //       token: token,
+  //     });
+  //   } catch (error) {
+  //     next(error);
+  //   }
+  // };
 
   public authApp = async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -150,20 +150,20 @@ class AuthController {
     }
   };
 
-  public authRefresh = async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      const requestForm: AuthInfoDto = req.body;
+  // public authRefresh = async (req: Request, res: Response, next: NextFunction) => {
+  //   try {
+  //     const requestForm: AuthInfoDto = req.body;
 
-      const token: string = await this.accountService.authRefresh(requestForm);
+  //     const token: string = await this.accountService.authRefresh(requestForm);
 
-      res.status(200).json({
-        message: 'OK',
-        token,
-      });
-    } catch (error) {
-      next(error);
-    }
-  };
+  //     res.status(200).json({
+  //       message: 'OK',
+  //       token,
+  //     });
+  //   } catch (error) {
+  //     next(error);
+  //   }
+  // };
 }
 
 export default AuthController;

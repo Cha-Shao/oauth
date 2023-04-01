@@ -5,20 +5,16 @@ import { logger } from './logger';
 // import Mail from 'nodemailer/lib/mailer'
 
 class UseEmail {
-  transporter: Transporter;
-
-  constructor() {
-    this.transporter = nodemailer.createTransport({
-      host: MAIL_HOST,
-      port: Number(MAIL_PORT),
-      secure: true,
-      requireTLS: true,
-      auth: {
-        user: MAIL_SENDER,
-        pass: MAIL_PWD,
-      },
-    });
-  }
+  private transporter: Transporter = nodemailer.createTransport({
+    host: MAIL_HOST,
+    port: Number(MAIL_PORT),
+    secure: true,
+    requireTLS: true,
+    auth: {
+      user: MAIL_SENDER,
+      pass: MAIL_PWD,
+    },
+  });
 
   public async send(mailArgs: MailType) {
     await this.transporter.sendMail({

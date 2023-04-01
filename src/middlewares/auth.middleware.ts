@@ -1,31 +1,39 @@
 import { NextFunction, Response } from 'express';
-import { verify } from 'jsonwebtoken';
-import { SECRET_KEY } from '@config';
 import { HttpException } from '@exceptions/HttpException';
-import { DataStoredInToken, RequestWithUser } from '@interfaces/auth.interface';
-import userModel from '@models/users.model';
+import { RequestWithAccountData } from '@interfaces/auth.interface';
+import { Account } from '@/interfaces/accounts.interface';
+import accountsModel from '@/models/accounts.model';
+import { TokenPayload } from '@/interfaces/token.interface';
+import useToken from '@/utils/useToken';
 
-const authMiddleware = async (req: RequestWithUser, res: Response, next: NextFunction) => {
+const accounts = accountsModel;
+const token = new useToken();
+
+const authMiddleware = async (req: RequestWithAccountData, res: Response, next: NextFunction) => {
   try {
-    const Authorization = req.cookies['Authorization'] || (req.header('Authorization') ? req.header('Authorization').split('Bearer ')[1] : null);
+    const requestToken = req.headers.authorization?.split('Bearer ')[1];
 
-    if (Authorization) {
-      const secretKey: string = SECRET_KEY;
-      const verificationResponse = (await verify(Authorization, secretKey)) as DataStoredInToken;
-      const userId = verificationResponse._id;
-      const findUser = await userModel.findById(userId);
+    if (requestToken) {
+      const parsedToken: TokenPayload = token.parse(requestToken);
 
-      if (findUser) {
-        req.user = findUser;
+      const accountData: Account = await accounts.findOne({
+        session: parsedToken.session,
+      });
+      if (accountData) {
+        // 用户存在
+        req.account = accountData;
         next();
       } else {
-        next(new HttpException(401, 'Wrong authentication token'));
+        // 用户不存在
+        next(new HttpException(401, 'login'));
       }
     } else {
-      next(new HttpException(404, 'Authentication token missing'));
+      // token没传入
+      next(new HttpException(401, 'login'));
     }
   } catch (error) {
-    next(new HttpException(401, 'Wrong authentication token'));
+    // 爆炸了
+    next(new HttpException(401, 'login'));
   }
 };
 

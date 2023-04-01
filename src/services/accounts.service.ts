@@ -26,24 +26,22 @@ class AccountService {
   private email = new UseEmail();
 
   public async register(accountData: RegisterAccountDto, requestIp: string): Promise<string> {
-    if (isEmpty(accountData)) throw new HttpException(400, 'empty');
-
-    // 用户名是否占用
+    // 用户名是否只包含英文数字
     if (!accountData.username.match(/^[a-zA-Z0-9_-]+$/)) throw new HttpException(400, 'invalid');
+    // 用户名是否关键词
     if (rejectUsername.includes(accountData.username)) throw new HttpException(409, 'username');
+    // 用户名是否占用
     const findWithUsername: Account = await this.accounts.findOne({
       username: accountData.username,
       valid: true,
     });
     if (findWithUsername) throw new HttpException(409, 'username');
-
     // 邮箱是否占用
     const findWithEmail: Account = await this.accounts.findOne({
       email: accountData.email,
       valid: true,
     });
     if (findWithEmail) throw new HttpException(409, 'email');
-
     // 加密密码
     const encryptionPassword = await hash(accountData.password, 7);
     // 生成识别码
@@ -58,7 +56,6 @@ class AccountService {
       valid: false,
     });
     if (!createAccount) throw new HttpException(500, 'server');
-
     // 生成token
     const token = this.token.generate(
       {
@@ -66,15 +63,14 @@ class AccountService {
         session: session,
       },
       undefined,
-      15 * 60,
+      30 * 60,
     );
-
     // 发邮箱
     const mailContent = registerHtml
       .replace(/{{ username }}/g, accountData.username)
       .replace(/{{ token }}/g, token)
       .replace(/{{ nowyear }}/g, String(new Date().getFullYear()));
-    this.email.send({
+    await this.email.send({
       to: accountData.username,
       email: accountData.email,
       title: '验证你的电子邮箱',
@@ -82,8 +78,8 @@ class AccountService {
       html: mailContent,
       type: 'Confirm account',
     });
-
-    logger.info(`Account has created:`);
+    // 记录日志
+    logger.info(`Account created:`);
     logger.info(`- Username : ${accountData.username}`);
     logger.info(`- Email    : ${accountData.email}`);
     logger.info(`- Ip       : ${requestIp}`);
@@ -99,61 +95,52 @@ class AccountService {
     token: string;
   }> {
     if (isEmpty(requestToken)) throw new HttpException(400, 'empty');
-
     // 解析token
     const parsedToken: TokenPayload = this.token.parse(requestToken);
     // token是启用账号类型
-    if (parsedToken.type !== 'confirm') throw new HttpException(401, 'invalid');
-
+    if (parsedToken.type !== 'confirm') throw new HttpException(400, 'invalid');
     // 是否已经激活过
-    const findAccount = await this.accounts.findOne({
+    const accountData: Account = await this.accounts.findOne({
       session: parsedToken.session,
     });
-    if (!findAccount) throw new HttpException(401, 'invalid');
-
+    if (!accountData) throw new HttpException(400, 'invalid');
     // 启用账户，设置加入时间
-    const updateStatus = await this.accounts.updateOne(
+    await this.accounts.updateOne(
       {
         session: parsedToken.session,
       },
       { $set: { jointime: new Date(), valid: true } },
     );
-    if (!updateStatus) throw new HttpException(500, 'server');
-
     // 更新识别码
-    const token = await this.refresh(requestToken, `local(origin ${requestIp})`);
-
+    const token = await this.refresh(requestToken, `local(forward ${requestIp})`);
+    // 日志
     logger.info(`Account confirmed:`);
-    logger.info(`- Username : ${findAccount.username}`);
+    logger.info(`- Username : ${accountData.username}`);
     logger.info(`- Ip       : ${requestIp}`);
 
-    return { username: findAccount.username, token };
+    return { username: accountData.username, token };
   }
 
-  public async login(accountData: LoginAccountDto, requestIp: string): Promise<string> {
-    if (isEmpty(accountData)) throw new HttpException(400, 'empty');
-
-    // 通过account（用户名/邮箱）寻找用户
-    const findAccount: Account =
+  public async login(requestAccount: LoginAccountDto, requestIp: string): Promise<string> {
+    // 通过account（用户名/邮箱）寻找用户是否存在
+    const accountData: Account =
       (await this.accounts.findOne({
-        username: accountData.account,
+        username: requestAccount.account,
         valid: true,
       })) ||
       (await this.accounts.findOne({
-        email: accountData.account,
+        email: requestAccount.account,
         valid: true,
       }));
-    if (!findAccount) throw new HttpException(401, 'login');
-
+    if (!accountData) throw new HttpException(401, 'login');
     // 密码是否正确
-    const checkPassword: boolean = await compare(accountData.password, findAccount.password);
+    const checkPassword: boolean = await compare(accountData.password, accountData.password);
     if (!checkPassword) throw new HttpException(401, 'login');
-
-    // 生成识别码并应用
+    // 更换识别码
     const session = nanoid();
-    const updateSession = await this.accounts.updateOne(
+    await this.accounts.updateOne(
       {
-        session: findAccount.session,
+        session: accountData.session,
       },
       {
         $set: {
@@ -161,16 +148,14 @@ class AccountService {
         },
       },
     );
-    if (!updateSession) throw new HttpException(500, 'server');
-
     // 生成token
     const token = this.token.generate({
       type: 'origin',
       session: session,
     });
-
-    logger.info(`Account has logged in`);
-    logger.info(`- Username : ${findAccount.username}`);
+    // 日志
+    logger.info(`Account logged in`);
+    logger.info(`- Username : ${accountData.username}`);
     logger.info(`- Ip       : ${requestIp}`);
 
     return token;
@@ -178,12 +163,10 @@ class AccountService {
 
   public async info(requestToken: string, requestIp: string): Promise<Account> {
     if (isEmpty(requestToken)) throw new HttpException(400, 'empty');
-
     // 解析token
     const parsedToken: TokenPayload = this.token.parse(requestToken);
     // token是源登录类型
     if (parsedToken.type !== 'origin') throw new HttpException(401, 'login');
-
     const accountData: Account = await this.accounts.findOne(
       {
         session: parsedToken.session,
@@ -191,13 +174,15 @@ class AccountService {
       { _id: 0, session: 0, password: 0 },
     );
     if (!accountData) throw new HttpException(401, 'login');
-
-    logger.info(`Account info request from ${requestIp}`);
+    // 日志
+    logger.info('Account found');
+    logger.info(`- Username:  ${accountData.username}`);
+    logger.info(`- Ip      :  ${requestIp}`);
 
     return accountData;
   }
 
-  public async refresh(requestToken: string, requestIp: string): Promise<string> {
+  private async refresh(requestToken: string, requestIp: string): Promise<string> {
     if (isEmpty(requestToken)) throw new HttpException(400, 'empty');
 
     // 解析token
@@ -206,10 +191,10 @@ class AccountService {
     if (parsedToken.type !== 'origin' && parsedToken.type !== 'confirm') throw new HttpException(401, 'login');
 
     // 识别码是否有用
-    const findAccount = await this.accounts.findOne({
+    const accountData: Account = await this.accounts.findOne({
       session: parsedToken.session,
     });
-    if (!findAccount) throw new HttpException(401, 'login');
+    if (!accountData) throw new HttpException(401, 'login');
 
     // 新的识别码
     const session = nanoid();
@@ -227,14 +212,15 @@ class AccountService {
       session: session,
     });
 
-    logger.info(`Account refresh request from ${requestIp}`);
+    logger.info(`Account refreshed`);
+    logger.info(`- Username:  ${accountData.username}`);
+    logger.info(`- Ip      :  ${requestIp}`);
 
     return token;
   }
 
   public async authApp(appId: string, requestIp: string): Promise<App> {
     if (isEmpty(appId)) throw new HttpException(400, 'empty');
-
     // 寻找app信息
     const appData: App = await this.apps.findOne(
       {
@@ -243,8 +229,9 @@ class AccountService {
       { _id: 0, silent: 0, secret: 0 },
     );
     if (!appData) throw new HttpException(404, 'not found');
-
-    logger.info(`App info request from ${requestIp}`);
+    // 日志
+    logger.info(`App found`);
+    logger.info(`- Ip:  ${requestIp}`);
 
     return appData;
   }
@@ -258,12 +245,10 @@ class AccountService {
     token: string;
   }> {
     if (isEmpty(requestToken) || isEmpty(appId)) throw new HttpException(400, 'empty');
-
     // 解析token
     const parsedToken: TokenPayload = this.token.parse(requestToken);
     // token是源登录类型
     if (parsedToken.type !== 'origin') throw new HttpException(401, 'login');
-
     // 寻找app信息
     const appData: App = await this.apps.findOne({
       id: appId,
@@ -287,7 +272,7 @@ class AccountService {
       5 * 60,
     );
 
-    logger.info('Account authorize request token has created:');
+    logger.info('Account authorize request:');
     logger.info(`- Username : ${accountData.username}`);
     logger.info(`- Ip       : ${requestIp}`);
 
@@ -295,12 +280,10 @@ class AccountService {
   }
 
   public async authApply(requestForm: AuthInfoDto): Promise<string> {
-    if (isEmpty(requestForm)) throw new HttpException(400, 'empty');
     // 解析token
     const parsedToken: TokenPayload = this.token.parse(requestForm.token);
     // token是请求授权类型
     if (parsedToken.type !== 'request') throw new HttpException(401, 'invalid');
-
     // 获取app数据
     const appData = await this.apps.findOne({
       id: parsedToken.id,
@@ -334,7 +317,6 @@ class AccountService {
         { new: true },
       );
       if (!applyAuth) throw new HttpException(401, 'login');
-
       // 生成token
       const token = this.token.generate(
         {
@@ -344,10 +326,10 @@ class AccountService {
         },
         requestForm.secret,
       );
-
-      logger.info('Account authorize created:');
-      logger.info(`App id   : ${appData.id}`);
-      logger.info(`Username : ${accountData.username}`);
+      // 日志
+      logger.info('Account authorized:');
+      logger.info(`- Username:  ${accountData.username}`);
+      logger.info(`- App id  :  ${appData.id}`);
 
       return token;
     } else {
@@ -367,16 +349,14 @@ class AccountService {
       });
 
       logger.info('Account authorize refreshed:');
-      logger.info(`App id   : ${appData.id}`);
-      logger.info(`Username : ${accountData.username}`);
+      logger.info(`- Username:  ${accountData.username}`);
+      logger.info(`- App id  :  ${appData.id}`);
 
       return token;
     }
   }
 
   public async authInfo(requestForm: AuthInfoDto): Promise<Account> {
-    if (isEmpty(requestForm)) throw new HttpException(400, 'empty');
-
     // 解析token
     const parsedToken = this.token.parse(requestForm.token, requestForm.secret);
     // token是否授权登录类型
@@ -401,21 +381,21 @@ class AccountService {
         email: 1,
       },
     );
-    if (!accountData) throw new HttpException(401, 'invalid');
+    if (!accountData) throw new HttpException(404, 'not found');
 
-    logger.info(`Account authorize info request from app id: ${appData.id}`);
+    logger.info('Account authorize info found:');
+    logger.info(`- Username:  ${accountData.username}`);
+    logger.info(`- App     :  ${appData.id}`);
 
     return accountData;
   }
 
-  public async authRefresh(requestForm: AuthInfoDto): Promise<string> {
-    if (isEmpty(requestForm)) throw new HttpException(400, 'empty');
-
+  private async authRefresh(requestForm: AuthInfoDto): Promise<string> {
     // 解析token
     const parsedToken: TokenPayload = this.token.parse(requestForm.token, requestForm.secret);
     // token是否是授权登录类型
     if (parsedToken.type !== 'authorize') throw new HttpException(401, 'invalid');
-
+    // 刷新识别码
     const session = nanoid();
     const updateSession: Account = await this.accounts.findOneAndUpdate(
       {
