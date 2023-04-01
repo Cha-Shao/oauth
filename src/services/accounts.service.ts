@@ -134,7 +134,7 @@ class AccountService {
       }));
     if (!accountData) throw new HttpException(401, 'login');
     // 密码是否正确
-    const checkPassword: boolean = await compare(accountData.password, accountData.password);
+    const checkPassword: boolean = await compare(requestAccount.password, accountData.password);
     if (!checkPassword) throw new HttpException(401, 'login');
     // 更换识别码
     const session = nanoid();
