@@ -31,7 +31,7 @@ class AuthRoute implements Routes {
     // 授权登录请求
     this.router.get(`${this.path}auth/request`, authMiddleware, this.accountsController.authRequest);
     // 应用授权登录
-    this.router.post(`${this.path}auth/apply`, authMiddleware, this.accountsController.authApply);
+    this.router.post(`${this.path}auth/apply`, this.accountsController.authApply);
     // 通过授权登录获得自己信息
     this.router.get(`${this.path}auth/info`, this.accountsController.authInfo);
     // // 自动续授权登录token
