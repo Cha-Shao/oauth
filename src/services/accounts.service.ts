@@ -283,13 +283,13 @@ class AccountService {
     // 解析token
     const parsedToken: TokenPayload = this.token.parse(requestForm.token);
     // token是请求授权类型
-    if (parsedToken.type !== 'request') throw new HttpException(401, 'invalid');
+    if (parsedToken.type !== 'request') throw new HttpException(400, 'type error');
     // 获取app数据
     const appData = await this.apps.findOne({
       id: parsedToken.id,
     });
     // app id 必能找到，所以不用(!appData)
-    if (appData.secret !== requestForm.secret) throw new HttpException(401, 'invalid');
+    if (appData.secret !== requestForm.secret) throw new HttpException(400, 'secret error');
 
     const accountData: Account = await this.accounts.findOne({
       session: parsedToken.session,
@@ -324,7 +324,7 @@ class AccountService {
           id: appData.id,
           session: session,
         },
-        requestForm.secret,
+        appData.secret,
       );
       // 日志
       logger.info('Account authorized:');
@@ -360,12 +360,12 @@ class AccountService {
     // 解析token
     const parsedToken = this.token.parse(requestForm.token, requestForm.secret);
     // token是否授权登录类型
-    if (parsedToken.type !== 'authorize') throw new HttpException(401, 'invalid');
+    if (parsedToken.type !== 'authorize') throw new HttpException(400, 'type error');
 
     const appData = await this.apps.findOne({
       id: parsedToken.id,
     });
-    if (appData.secret !== requestForm.secret) throw new HttpException(401, 'invalid');
+    if (appData.secret !== requestForm.secret) throw new HttpException(400, 'secret error');
 
     const accountData = await this.accounts.findOne(
       {
